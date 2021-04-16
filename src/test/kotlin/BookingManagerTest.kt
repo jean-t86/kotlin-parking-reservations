@@ -67,4 +67,14 @@ class BookingManagerTest {
 
         assertEquals(false, actual)
     }
+
+    @Test
+    fun `cannot book twice in the same day`() {
+        val bookingDate = LocalDate.of(2021, 4, 16)
+        bookingManager.book("AC34F", bookingDate)
+
+        val actual = bookingManager.book("AC34F", bookingDate)
+
+        assertEquals(true, actual)
+    }
 }
