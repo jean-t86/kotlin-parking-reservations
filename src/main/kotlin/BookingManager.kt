@@ -2,9 +2,12 @@ import java.time.LocalDate
 
 class BookingManager(carPark: CarPark) {
 
-    private val bookings: Map<LocalDate, Int> = mutableMapOf()
+    private val bookings: MutableMap<LocalDate, MutableList<String>> = mutableMapOf()
 
     fun book(registrationPlate: String, date: LocalDate): Boolean {
-        return false
+        if (bookings[date] == null) bookings[date] = mutableListOf()
+        bookings[date]?.add(registrationPlate)
+
+        return true
     }
 }
