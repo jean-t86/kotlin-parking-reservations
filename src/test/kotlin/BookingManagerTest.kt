@@ -88,9 +88,15 @@ class BookingManagerTest {
     @Test
     fun `cannot book twice in the same day`() {
         val bookingDate = LocalDate.of(2021, 4, 16)
-        bookingManager.book("AC34F", bookingDate)
+        val booking = Booking(now, bookingDate, "AC34F")
+        bookingManager.book(booking)
 
-        val actual = bookingManager.book("AC34F", bookingDate)
+        val actualBooking = Booking(
+            now,
+            LocalDate.of(2021, 4, 19),
+            "AC34F"
+        )
+        val actual = bookingManager.book(actualBooking)
 
         assertEquals(false, actual)
     }
