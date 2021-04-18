@@ -1,6 +1,7 @@
 ## Design decisions
 
-
+TODO("Explain in details the time perspective between the server vs the client")
+Time is relative. Decided to get booking time as a UTC time from the server side.
 
 ## Assumptions
 
