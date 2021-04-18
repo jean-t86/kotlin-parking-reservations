@@ -50,7 +50,7 @@ class BookingManager(
                 bookingCreationTimestamp,
                 0,
                 ZoneOffset.UTC
-            ).toLocalDate()
+            )
 
         val latestBookingTimestamp = bookingsByLicensePlate[customer]?.maxByOrNull { it }
 
@@ -60,8 +60,9 @@ class BookingManager(
                     latestBookingTimestamp,
                     0,
                     ZoneOffset.UTC
-                ).toLocalDate()
-            return currentBookingLocalDate == latestBookingLocalDate
+                )
+
+            return ChronoUnit.HOURS.between(currentBookingLocalDate, latestBookingLocalDate) < 24
         }
 
         return false
