@@ -11,8 +11,9 @@ Time is relative. Decided to get booking time as a UTC time from the server side
 
 
 2. For the rule where a customer can only make one booking a day, it is assumed that the exact time is observed, i.e. if
-   a customer makes a booking on the 17th at 20:00, they will only be able to make another booking on the 18th after 20:00.
-   
+   a customer makes a booking on the 17th at 20:00, they will only be able to make another booking on the 18th after 20:
+   00.
+
 
 3. An assumption is made that this application will only serve local users, and therefore `LocalDateTime` for the local
    time zone will be used, whether created client-side or server-side. In this case, it will be created server-side (
@@ -21,3 +22,6 @@ Time is relative. Decided to get booking time as a UTC time from the server side
 
 4. A customer can only book one bay on any given days with their registration plate, i.e. no double bookings on the same
    day with the same plates.
+
+5. Assume that there is a client/server relationship and that the client could be in a different timezone than the
+   server instances. 

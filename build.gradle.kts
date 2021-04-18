@@ -13,6 +13,7 @@ repositories {
 }
 
 dependencies {
+    testImplementation("io.mockk:mockk:1.10.6")
     testImplementation(kotlin("test-junit"))
 }
 

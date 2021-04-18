@@ -1,4 +1,4 @@
-package util
+package parkingbooking.util
 
 import java.time.LocalDate
 import java.time.LocalDateTime
