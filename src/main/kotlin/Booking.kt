@@ -1,3 +1,3 @@
 import java.time.LocalDate
 
-data class Booking(val creationDate: LocalDate, val bookingDate: LocalDate, val licensePlate: String)
+data class Booking(val bookingDate: LocalDate, val customer: Customer)

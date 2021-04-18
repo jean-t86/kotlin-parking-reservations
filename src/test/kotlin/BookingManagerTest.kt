@@ -1,4 +1,5 @@
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import java.time.LocalDate
 import kotlin.test.assertEquals
@@ -6,6 +7,11 @@ import kotlin.test.assertEquals
 class BookingManagerTest {
 
     private val now = LocalDate.now()
+    private val customerAlice = Customer("AC34F", "Alice")
+    private val customerBob = Customer("LK657", "Bob")
+    private val customerCharlie = Customer("UYS34Y", "Charlie")
+    private val customerDave = Customer("ZZ034", "Charlie")
+    private val customerEd = Customer("DD235Z", "Ed")
 
     private lateinit var bookingManager: BookingManager
 
@@ -18,7 +24,7 @@ class BookingManagerTest {
     @Test
     fun `can book when all bays available`() {
         val bookingDate = LocalDate.of(2021, 4, 16)
-        val booking = Booking(now, bookingDate, "AC34F")
+        val booking = Booking(bookingDate, customerAlice)
 
         val actual = bookingManager.book(booking)
 
@@ -28,10 +34,10 @@ class BookingManagerTest {
     @Test
     fun `can book when three bays available`() {
         val bookingDate = LocalDate.of(2021, 4, 16)
-        val booking = Booking(now, bookingDate, "AC34F")
+        val booking = Booking(bookingDate, customerAlice)
         bookingManager.book(booking)
 
-        val actualBooking = Booking(now, bookingDate, "LK657")
+        val actualBooking = Booking(bookingDate, customerBob)
         val actual = bookingManager.book(actualBooking)
 
         assertEquals(true, actual)
@@ -40,12 +46,12 @@ class BookingManagerTest {
     @Test
     fun `can book when two bays available`() {
         val bookingDate = LocalDate.of(2021, 4, 16)
-        val booking1 = Booking(now, bookingDate, "AC34F")
-        val booking2 = Booking(now, bookingDate, "LK657")
-        bookingManager.book(booking1)
-        bookingManager.book(booking2)
+        val bookingAlice = Booking(bookingDate, customerAlice)
+        val bookingBob = Booking(bookingDate, customerBob)
+        bookingManager.book(bookingAlice)
+        bookingManager.book(bookingBob)
 
-        val actualBooking = Booking(now, bookingDate, "UYS34Y")
+        val actualBooking = Booking(bookingDate, customerCharlie)
         val actual = bookingManager.book(actualBooking)
 
         assertEquals(true, actual)
@@ -54,14 +60,14 @@ class BookingManagerTest {
     @Test
     fun `can book when one bay available`() {
         val bookingDate = LocalDate.of(2021, 4, 16)
-        val booking1 = Booking(now, bookingDate, "AC34F")
-        val booking2 = Booking(now, bookingDate, "LK657")
-        val booking3 = Booking(now, bookingDate, "UYS34Y")
-        bookingManager.book(booking1)
-        bookingManager.book(booking2)
-        bookingManager.book(booking3)
+        val bookingAlice = Booking(bookingDate, customerAlice)
+        val bookingBob = Booking(bookingDate, customerBob)
+        val bookingCharlie = Booking(bookingDate, customerCharlie)
+        bookingManager.book(bookingAlice)
+        bookingManager.book(bookingBob)
+        bookingManager.book(bookingCharlie)
 
-        val actualBooking = Booking(now, bookingDate, "ZZ034")
+        val actualBooking = Booking(bookingDate, customerDave)
         val actual = bookingManager.book(actualBooking)
 
         assertEquals(true, actual)
@@ -70,16 +76,16 @@ class BookingManagerTest {
     @Test
     fun `cannot book when no bays available`() {
         val bookingDate = LocalDate.of(2021, 4, 16)
-        val booking1 = Booking(now, bookingDate, "AC34F")
-        val booking2 = Booking(now, bookingDate, "LK657")
-        val booking3 = Booking(now, bookingDate, "UYS34Y")
-        val booking4 = Booking(now, bookingDate, "ZZ034")
-        bookingManager.book(booking1)
-        bookingManager.book(booking2)
-        bookingManager.book(booking3)
-        bookingManager.book(booking4)
+        val bookingAlice = Booking(bookingDate, customerAlice)
+        val bookingBob = Booking(bookingDate, customerBob)
+        val bookingCharlie = Booking(bookingDate, customerCharlie)
+        val bookingDave = Booking(bookingDate, customerDave)
+        bookingManager.book(bookingAlice)
+        bookingManager.book(bookingBob)
+        bookingManager.book(bookingCharlie)
+        bookingManager.book(bookingDave)
 
-        val actualBooking = Booking(now, bookingDate, "ZZ034")
+        val actualBooking = Booking(bookingDate, customerEd)
         val actual = bookingManager.book(actualBooking)
 
         assertEquals(false, actual)
@@ -88,14 +94,10 @@ class BookingManagerTest {
     @Test
     fun `cannot book twice in the same day`() {
         val bookingDate = LocalDate.of(2021, 4, 16)
-        val booking = Booking(now, bookingDate, "AC34F")
+        val booking = Booking(bookingDate, customerEd)
         bookingManager.book(booking)
 
-        val actualBooking = Booking(
-            now,
-            LocalDate.of(2021, 4, 19),
-            "AC34F"
-        )
+        val actualBooking = Booking(bookingDate, customerEd)
         val actual = bookingManager.book(actualBooking)
 
         assertEquals(false, actual)
