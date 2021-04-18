@@ -1,5 +1,10 @@
+import model.Booking
+import model.CarPark
+import model.Customer
 import org.junit.Before
 import org.junit.Test
+import util.BookingManagerClock
+import util.UtcEpoch
 import java.time.LocalDate
 import kotlin.test.assertEquals
 
@@ -111,6 +116,27 @@ class BookingManagerTest {
         val bookingDate = LocalDate.of(2021, 4, 16)
         val booking = Booking(bookingDate, customerEd)
         bookingManager.book(booking)
+
+        val actualBookingDate = LocalDate.of(2021, 6, 17)
+        val actualBooking = Booking(actualBookingDate, customerEd)
+        val actual = bookingManager.book(actualBooking)
+
+        assertEquals(false, actual)
+    }
+
+    @Test
+    fun `can only make a booking once a day but is trying thrice`() {
+        val booking1 = Booking(
+            LocalDate.of(2021, 4, 16),
+            customerEd
+        )
+        assertEquals(true, bookingManager.book(booking1))
+
+        val booking2 = Booking(
+            LocalDate.of(2021, 5, 16),
+            customerEd
+        )
+        assertEquals(false, bookingManager.book(booking2))
 
         val actualBookingDate = LocalDate.of(2021, 6, 17)
         val actualBooking = Booking(actualBookingDate, customerEd)
