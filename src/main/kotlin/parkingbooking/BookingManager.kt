@@ -1,5 +1,6 @@
 package parkingbooking
 
+import parkingbooking.exceptions.*
 import parkingbooking.model.Booking
 import parkingbooking.model.CarPark
 import parkingbooking.model.Customer
@@ -12,37 +13,42 @@ class BookingManager(
     private val carPark: CarPark,
     private val bookingManagerClock: UtcEpoch
 ) {
+    private val bookingsDateToCustomers: MutableMap<LocalDate, MutableList<String>> = mutableMapOf()
 
-    private val bookingsByDate: MutableMap<LocalDate, MutableList<String>> = mutableMapOf()
-
-    private val bookingsCustomerToCreationTimestamp: MutableMap<Customer, MutableList<Long>> = mutableMapOf()
+    private val bookingsCustomerToBookingTimestamp: MutableMap<Customer, MutableList<Long>> = mutableMapOf()
 
     fun book(booking: Booking): Boolean {
         val (bookingDate, customer) = booking
         val bookingCreationTimestamp = bookingManagerClock.epochSecondNow()
 
-        // Check if the booking is in the past
-        if (isBookingInThePast(bookingDate.toLocalDate(), bookingCreationTimestamp)) return false
+        when {
+            isBookingInThePast(bookingDate.toLocalDate(), bookingCreationTimestamp) ->
+                throw BookingInThePastException()
 
-        // Check if car park is fully book on that date
-        if (isCarParkFullyBooked(bookingDate.toLocalDate())) return false
+            isCarParkFullyBooked(bookingDate.toLocalDate()) ->
+                throw ParkingFullyBookedException()
 
-        // Check if customer is trying to double book on the same day
-        if (hasCustomerAlreadyBookedForThatDate(booking)) return false
+            hasCustomerAlreadyBookedForThatDate(booking) ->
+                throw AlreadyBookedForThatDateException()
 
-        // Check if customer is making a booking 1 day in advance. Time here is irrelevant
-        if (isCustomerNotMakingABookingAtLeastOneDayAhead(bookingDate.toLocalDate(), bookingCreationTimestamp)) return false
+            isCustomerNotMakingABookingAtLeastOneDayAhead(bookingDate.toLocalDate(), bookingCreationTimestamp) ->
+                throw NotBookedOneDayAheadException()
 
-        // Check if customer is trying to make more than one booking on the same day
-        if (isCustomerTryingToMakeMoreBookingsInLessThan24Hours(customer, bookingCreationTimestamp)) return false
+            isCustomerTryingToMakeMoreBookingsInLessThan24Hours(customer, bookingCreationTimestamp) ->
+                throw BookingAgainWithin24hrs()
 
-        if (bookingsByDate[bookingDate.toLocalDate()] == null) bookingsByDate[bookingDate.toLocalDate()] =
-            mutableListOf()
-        bookingsByDate[bookingDate.toLocalDate()]?.add(customer.licensePlate)
+            else -> {
+                if (bookingsDateToCustomers[bookingDate.toLocalDate()] == null) {
+                    bookingsDateToCustomers[bookingDate.toLocalDate()] = mutableListOf()
+                }
+                bookingsDateToCustomers[bookingDate.toLocalDate()]?.add(customer.licensePlate)
 
-        if (bookingsCustomerToCreationTimestamp[customer] == null) bookingsCustomerToCreationTimestamp[customer] =
-            mutableListOf()
-        bookingsCustomerToCreationTimestamp[customer]?.add(bookingCreationTimestamp)
+                if (bookingsCustomerToBookingTimestamp[customer] == null) {
+                    bookingsCustomerToBookingTimestamp[customer] = mutableListOf()
+                }
+                bookingsCustomerToBookingTimestamp[customer]?.add(bookingCreationTimestamp)
+            }
+        }
 
         return true
     }
@@ -52,17 +58,20 @@ class BookingManager(
         return bookingDate < bookingCreationLocalDate
     }
 
-    private fun isCustomerNotMakingABookingAtLeastOneDayAhead(bookingDate: LocalDate, bookingCreationTimestamp: Long): Boolean {
+    private fun isCustomerNotMakingABookingAtLeastOneDayAhead(
+        bookingDate: LocalDate,
+        bookingCreationTimestamp: Long
+    ): Boolean {
         val bookingCreationLocalDate = BookingManagerClock.toLocalDate(bookingCreationTimestamp)
         return ChronoUnit.DAYS.between(bookingDate, bookingCreationLocalDate) == 0L
     }
 
     // A customer can book all-day parking at a car park with a given date if there is a free bay available.
-    private fun isCarParkFullyBooked(date: LocalDate) = bookingsByDate[date]?.size == carPark.maxBays
+    private fun isCarParkFullyBooked(date: LocalDate) = bookingsDateToCustomers[date]?.size == carPark.maxBays
 
     // A customer cannot book more than one bay on the same date
     private fun hasCustomerAlreadyBookedForThatDate(booking: Booking): Boolean {
-        val bookings = bookingsByDate[booking.bookingDate.toLocalDate()]
+        val bookings = bookingsDateToCustomers[booking.bookingDate.toLocalDate()]
         return bookings != null && bookings.contains(booking.customer.licensePlate)
     }
 
@@ -72,7 +81,7 @@ class BookingManager(
         bookingCreationTimestamp: Long
     ): Boolean {
         val currentBookingLocalDate = BookingManagerClock.toLocalDateTime(bookingCreationTimestamp)
-        val latestBookingTimestamp = bookingsCustomerToCreationTimestamp[customer]?.maxByOrNull { it }
+        val latestBookingTimestamp = bookingsCustomerToBookingTimestamp[customer]?.maxByOrNull { it }
 
         latestBookingTimestamp?.let {
             val latestBookingLocalDate = BookingManagerClock.toLocalDateTime(latestBookingTimestamp)
@@ -82,5 +91,5 @@ class BookingManager(
         return false
     }
 
-    fun getBookings(date: LocalDate): List<String> = bookingsByDate[date] ?: listOf()
+    fun getBookings(date: LocalDate): List<String> = bookingsDateToCustomers[date] ?: listOf()
 }

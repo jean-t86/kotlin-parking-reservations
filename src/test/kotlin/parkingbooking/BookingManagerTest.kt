@@ -4,6 +4,8 @@ import io.mockk.every
 import io.mockk.mockk
 import org.junit.Before
 import org.junit.Test
+import parkingbooking.exceptions.AlreadyBookedForThatDateException
+import parkingbooking.exceptions.ParkingFullyBookedException
 import parkingbooking.model.Booking
 import parkingbooking.model.CarPark
 import parkingbooking.model.Customer
@@ -13,7 +15,7 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
-import kotlin.test.assertFalse
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class BookingManagerTest {
@@ -124,10 +126,10 @@ class BookingManagerTest {
         bookingManager.book(bookingCharlie)
         bookingManager.book(bookingDave)
 
-        val actualBooking = Booking(getBookingDate(), customerEd)
-        val actual = bookingManager.book(actualBooking)
-
-        assertFalse { actual }
+        assertFailsWith<ParkingFullyBookedException>("The parking for that date is fully booked.") {
+            val actualBooking = Booking(getBookingDate(), customerEd)
+            bookingManager.book(actualBooking)
+        }
     }
 
     @Test
@@ -136,22 +138,21 @@ class BookingManagerTest {
         val booking = Booking(getBookingDate(3), customerEd)
         bookingManager.book(booking)
 
-        val actualBooking = Booking(getBookingDate(3), customerEd)
-        val actual = bookingManager.book(actualBooking)
-
-        assertFalse { actual }
+        assertFailsWith<AlreadyBookedForThatDateException>("You already have a booking for that date.") {
+            val actualBooking = Booking(getBookingDate(3), customerEd)
+            bookingManager.book(actualBooking)
+        }
     }
 
     @Test
     fun `can only make a booking once a day but is trying twice`() {
         mockBookingManagerClock(1)
         val booking = Booking(getBookingDate(), customerEd)
-        bookingManager.book(booking)
+        assertTrue { bookingManager.book(booking) }
 
-        val actualBooking = Booking(getBookingDate(2), customerEd)
-        val actual = bookingManager.book(actualBooking)
-
-        assertFalse { actual }
+        assertFailsWith<AlreadyBookedForThatDateException>("You already have a booking for that date.") {
+            bookingManager.book(Booking(getBookingDate(1), customerEd))
+        }
     }
 
     @Test
@@ -159,9 +160,13 @@ class BookingManagerTest {
         mockBookingManagerClock(1)
         assertTrue { bookingManager.book(Booking(getBookingDate(), customerEd)) }
 
-        assertFalse { bookingManager.book(Booking(getBookingDate(1), customerEd)) }
+        assertFailsWith<AlreadyBookedForThatDateException>("You already have a booking for that date.") {
+            bookingManager.book(Booking(getBookingDate(1), customerEd))
+        }
 
-        assertFalse { bookingManager.book(Booking(getBookingDate(2), customerEd)) }
+        assertFailsWith<AlreadyBookedForThatDateException>("You already have a booking for that date.") {
+            bookingManager.book(Booking(getBookingDate(2), customerEd))
+        }
     }
 
     @Test
