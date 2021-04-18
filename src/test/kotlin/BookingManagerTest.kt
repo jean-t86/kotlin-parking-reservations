@@ -123,7 +123,6 @@ class BookingManagerTest {
     fun `can only make a booking once a day and is doing so`() {
         val bookingDate = LocalDate.of(2021, 4, 16)
         val booking = Booking(bookingDate, customerEd)
-        bookingManager.book(booking)
 
         val actual = bookingManager.book(booking)
 
