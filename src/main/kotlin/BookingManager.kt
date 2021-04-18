@@ -1,10 +1,9 @@
 import model.Booking
 import model.CarPark
 import model.Customer
+import util.BookingManagerClock
 import util.UtcEpoch
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 
 class BookingManager(
@@ -19,6 +18,9 @@ class BookingManager(
     fun book(booking: Booking): Boolean {
         val (bookingDate, customer) = booking
         val bookingCreationTimestamp = bookingManagerClock.epochSecondNow()
+
+        // Check if the booking is in the past
+        if (isBookingInThePast(bookingDate, bookingCreationTimestamp)) return false
 
         // Check if car park is fully book on that date
         if (isCarParkFullyBooked(bookingDate)) return false
@@ -42,8 +44,13 @@ class BookingManager(
         return true
     }
 
+    private fun isBookingInThePast(bookingDate: LocalDate, bookingCreationTimestamp: Long): Boolean {
+        val bookingCreationLocalDate = BookingManagerClock.toLocalDate(bookingCreationTimestamp)
+        return bookingDate < bookingCreationLocalDate
+    }
+
     private fun isCustomerMakingABookingOneDayAhead(bookingDate: LocalDate, bookingCreationTimestamp: Long): Boolean {
-        val bookingCreationLocalDate = LocalDateTime.ofEpochSecond(bookingCreationTimestamp, 0, ZoneOffset.UTC).toLocalDate()
+        val bookingCreationLocalDate = BookingManagerClock.toLocalDate(bookingCreationTimestamp)
         return ChronoUnit.DAYS.between(bookingDate, bookingCreationLocalDate) == 0L
     }
 
@@ -61,24 +68,11 @@ class BookingManager(
         customer: Customer,
         bookingCreationTimestamp: Long
     ): Boolean {
-
-        val currentBookingLocalDate = LocalDateTime
-            .ofEpochSecond(
-                bookingCreationTimestamp,
-                0,
-                ZoneOffset.UTC
-            )
-
+        val currentBookingLocalDate = BookingManagerClock.toLocalDateTime(bookingCreationTimestamp)
         val latestBookingTimestamp = bookingsCustomerToCreationTimestamp[customer]?.maxByOrNull { it }
 
         latestBookingTimestamp?.let {
-            val latestBookingLocalDate =
-                LocalDateTime.ofEpochSecond(
-                    latestBookingTimestamp,
-                    0,
-                    ZoneOffset.UTC
-                )
-
+            val latestBookingLocalDate = BookingManagerClock.toLocalDateTime(latestBookingTimestamp)
             return ChronoUnit.HOURS.between(currentBookingLocalDate, latestBookingLocalDate) < 24
         }
 
