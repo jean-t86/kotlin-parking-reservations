@@ -13,7 +13,7 @@ class BookingManager(
     private val carPark: CarPark,
     private val bookingManagerClock: UtcEpoch
 ) {
-    private val bookingsDateToCustomers: MutableMap<LocalDate, MutableList<String>> = mutableMapOf()
+    private val bookingsDateToBooking: MutableMap<LocalDate, MutableList<Booking>> = mutableMapOf()
 
     private val bookingsCustomerToBookingTimestamp: MutableMap<Customer, MutableList<Long>> = mutableMapOf()
 
@@ -38,10 +38,10 @@ class BookingManager(
                 throw BookingAgainWithin24hrs()
 
             else -> {
-                if (bookingsDateToCustomers[bookingDate.toLocalDate()] == null) {
-                    bookingsDateToCustomers[bookingDate.toLocalDate()] = mutableListOf()
+                if (bookingsDateToBooking[bookingDate.toLocalDate()] == null) {
+                    bookingsDateToBooking[bookingDate.toLocalDate()] = mutableListOf()
                 }
-                bookingsDateToCustomers[bookingDate.toLocalDate()]?.add(customer.licensePlate)
+                bookingsDateToBooking[bookingDate.toLocalDate()]?.add(booking)
 
                 if (bookingsCustomerToBookingTimestamp[customer] == null) {
                     bookingsCustomerToBookingTimestamp[customer] = mutableListOf()
@@ -66,11 +66,14 @@ class BookingManager(
         return ChronoUnit.DAYS.between(bookingDate, bookingCreationLocalDate) == 0L
     }
 
-    private fun isCarParkFullyBooked(date: LocalDate) = bookingsDateToCustomers[date]?.size == carPark.maxBays
+    private fun isCarParkFullyBooked(date: LocalDate) = bookingsDateToBooking[date]?.size == carPark.maxBays
 
     private fun hasCustomerAlreadyBookedForThatDate(booking: Booking): Boolean {
-        val bookings = bookingsDateToCustomers[booking.bookingDate.toLocalDate()]
-        return bookings != null && bookings.contains(booking.customer.licensePlate)
+        val bookings = bookingsDateToBooking[booking.bookingDate.toLocalDate()]
+
+        return bookings != null && bookings.any {
+            it.customer.licensePlate == booking.customer.licensePlate
+        }
     }
 
     private fun isCustomerTryingToMakeMoreBookingsInLessThan24Hours(
@@ -88,5 +91,5 @@ class BookingManager(
         return false
     }
 
-    fun getBookings(date: LocalDate): List<String> = bookingsDateToCustomers[date] ?: listOf()
+    fun getBookings(date: LocalDate): List<Booking> = bookingsDateToBooking[date] ?: listOf()
 }
