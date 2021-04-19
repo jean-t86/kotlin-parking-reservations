@@ -5,6 +5,7 @@ import io.mockk.mockk
 import org.junit.Before
 import org.junit.Test
 import parkingbooking.exceptions.AlreadyBookedForThatDateException
+import parkingbooking.exceptions.BookingInThePastException
 import parkingbooking.exceptions.ParkingFullyBookedException
 import parkingbooking.model.Booking
 import parkingbooking.model.CarPark
@@ -179,5 +180,15 @@ class BookingManagerTest {
         val booking = Booking(getBookingDate(4), customerEd)
 
         assertTrue { bookingManager.book(booking) }
+    }
+
+    @Test
+    fun `cannot make a booking in the past`() {
+        mockBookingManagerClock(1)
+        val booking = Booking(getBookingDate(4, true), customerEd)
+
+        assertFailsWith<BookingInThePastException>("You cannot make a booking in the past.") {
+            bookingManager.book(booking)
+        }
     }
 }

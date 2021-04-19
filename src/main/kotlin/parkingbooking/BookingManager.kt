@@ -66,16 +66,13 @@ class BookingManager(
         return ChronoUnit.DAYS.between(bookingDate, bookingCreationLocalDate) == 0L
     }
 
-    // A customer can book all-day parking at a car park with a given date if there is a free bay available.
     private fun isCarParkFullyBooked(date: LocalDate) = bookingsDateToCustomers[date]?.size == carPark.maxBays
 
-    // A customer cannot book more than one bay on the same date
     private fun hasCustomerAlreadyBookedForThatDate(booking: Booking): Boolean {
         val bookings = bookingsDateToCustomers[booking.bookingDate.toLocalDate()]
         return bookings != null && bookings.contains(booking.customer.licensePlate)
     }
 
-    // A customer can only make one booking a day regardless of when that date is
     private fun isCustomerTryingToMakeMoreBookingsInLessThan24Hours(
         customer: Customer,
         bookingCreationTimestamp: Long
