@@ -55,11 +55,15 @@ class BookingManagerTest {
     }
 
     private fun getBookingDate(daysFromNow: Long = 0, isInThePast: Boolean = false): ZonedDateTime {
-        val now = ZonedDateTime.of(LocalDateTime.now(), ZoneId.of("UTC"))
-        if (isInThePast) now.minusDays(daysFromNow)
-        else now.plusDays(daysFromNow)
-
-        return now
+        return if (isInThePast) {
+            ZonedDateTime
+                .of(LocalDateTime.now(), ZoneId.of("UTC"))
+                .minusDays(daysFromNow)
+        } else {
+            ZonedDateTime
+                .of(LocalDateTime.now(), ZoneId.of("UTC"))
+                .plusDays(daysFromNow)
+        }
     }
 
     @Test
@@ -151,21 +155,21 @@ class BookingManagerTest {
         assertTrue { bookingManager.book(booking) }
 
         assertFailsWith<AlreadyBookedForThatDateException>("You already have a booking for that date.") {
-            bookingManager.book(Booking(getBookingDate(1), customerEd))
+            bookingManager.book(Booking(getBookingDate(), customerEd))
         }
     }
 
     @Test
     fun `can only make a booking once a day but is trying thrice`() {
         mockBookingManagerClock(1)
-        assertTrue { bookingManager.book(Booking(getBookingDate(), customerEd)) }
+        assertTrue { bookingManager.book(Booking(getBookingDate(1), customerEd)) }
 
         assertFailsWith<AlreadyBookedForThatDateException>("You already have a booking for that date.") {
             bookingManager.book(Booking(getBookingDate(1), customerEd))
         }
 
         assertFailsWith<AlreadyBookedForThatDateException>("You already have a booking for that date.") {
-            bookingManager.book(Booking(getBookingDate(2), customerEd))
+            bookingManager.book(Booking(getBookingDate(1), customerEd))
         }
     }
 
