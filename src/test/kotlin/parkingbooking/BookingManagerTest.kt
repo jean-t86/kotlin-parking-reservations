@@ -4,13 +4,10 @@ import io.mockk.every
 import io.mockk.mockk
 import org.junit.Before
 import org.junit.Test
-import parkingbooking.exceptions.AlreadyBookedForThatDateException
-import parkingbooking.exceptions.BookingInThePastException
-import parkingbooking.exceptions.ParkingFullyBookedException
+import parkingbooking.exceptions.*
 import parkingbooking.model.Booking
 import parkingbooking.model.CarPark
 import parkingbooking.model.Customer
-import parkingbooking.util.BookingManagerClock
 import parkingbooking.util.UtcEpoch
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -26,7 +23,7 @@ class BookingManagerTest {
     private val customerEd = Customer("DD235Z", "Ed")
 
     private val carPark = CarPark(4)
-    private val bookingManagerClock: UtcEpoch = BookingManagerClock()
+    private val mockBookingManagerClock: UtcEpoch = mockk()
 
     private lateinit var bookingManager: BookingManager
 
@@ -34,39 +31,60 @@ class BookingManagerTest {
     fun setup() {
         bookingManager = BookingManager(
             carPark,
-            bookingManagerClock
+            mockBookingManagerClock
         )
     }
 
-    private fun mockBookingManagerClock(daysOffset: Long = 0, isInThePast: Boolean = true) {
-        val mockManagerClock = mockk<UtcEpoch>()
+    private fun mockBookingManagerClock(
+        daysOffset: Long = 0,
+        hoursOffset: Long = 0,
+        minutesOffset: Long = 0,
+        secondsOffset: Long = 0,
+        isInThePast: Boolean = true
+    ) {
         if (isInThePast) {
-            every { mockManagerClock.epochSecondNow() } returns
+            every { mockBookingManagerClock.epochSecondNow() } returns
                     ZonedDateTime
                         .now(ZoneId.of("UTC"))
                         .minusDays(daysOffset)
+                        .minusHours(hoursOffset)
+                        .minusMinutes(minutesOffset)
+                        .minusSeconds(secondsOffset)
                         .toEpochSecond()
         } else {
-            every { mockManagerClock.epochSecondNow() } returns
+            every { mockBookingManagerClock.epochSecondNow() } returns
                     ZonedDateTime
                         .now(ZoneId.of("UTC"))
                         .plusDays(daysOffset)
+                        .plusHours(hoursOffset)
+                        .plusMinutes(minutesOffset)
+                        .plusSeconds(secondsOffset)
                         .toEpochSecond()
 
         }
-
-        bookingManager = BookingManager(carPark, mockManagerClock)
     }
 
-    private fun getBookingDate(daysOffset: Long = 0, isInThePast: Boolean = false): ZonedDateTime {
+    private fun getBookingDate(
+        daysOffset: Long = 0,
+        hoursOffset: Long = 0,
+        minutesOffset: Long = 0,
+        secondsOffset: Long = 0,
+        isInThePast: Boolean = false
+    ): ZonedDateTime {
         return if (isInThePast) {
             ZonedDateTime
                 .now(ZoneId.of("UTC"))
                 .minusDays(daysOffset)
+                .minusHours(hoursOffset)
+                .minusMinutes(minutesOffset)
+                .minusSeconds(secondsOffset)
         } else {
             ZonedDateTime
                 .now(ZoneId.of("UTC"))
                 .plusDays(daysOffset)
+                .plusHours(hoursOffset)
+                .plusMinutes(minutesOffset)
+                .plusSeconds(secondsOffset)
         }
     }
 
@@ -141,8 +159,8 @@ class BookingManagerTest {
     }
 
     @Test
-    fun `cannot book twice for the same date`() {
-        mockBookingManagerClock(1)
+    fun `cannot book twice for the same date `() {
+        mockBookingManagerClock()
         val booking = Booking(getBookingDate(3), customerEd)
         bookingManager.book(booking)
 
@@ -188,7 +206,7 @@ class BookingManagerTest {
     @Test
     fun `cannot make a booking 1 day in the past`() {
         mockBookingManagerClock()
-        val booking = Booking(getBookingDate(1, true), customerEd)
+        val booking = Booking(getBookingDate(1, isInThePast = true), customerEd)
 
         assertFailsWith<BookingInThePastException>("You cannot make a booking in the past.") {
             bookingManager.book(booking)
@@ -198,7 +216,7 @@ class BookingManagerTest {
     @Test
     fun `cannot make a booking 2 days in the past`() {
         mockBookingManagerClock()
-        val booking = Booking(getBookingDate(1, true), customerEd)
+        val booking = Booking(getBookingDate(1, isInThePast = true), customerEd)
 
         assertFailsWith<BookingInThePastException>("You cannot make a booking in the past.") {
             bookingManager.book(booking)
@@ -208,10 +226,72 @@ class BookingManagerTest {
     @Test
     fun `cannot make a booking 50 days in the past`() {
         mockBookingManagerClock()
-        val booking = Booking(getBookingDate(50, true), customerEd)
+        val booking = Booking(getBookingDate(50, isInThePast = true), customerEd)
 
         assertFailsWith<BookingInThePastException>("You cannot make a booking in the past.") {
             bookingManager.book(booking)
         }
+    }
+
+    @Test
+    fun `needs to book one day ahead`() {
+        mockBookingManagerClock()
+        val booking = Booking(getBookingDate(), customerEd)
+
+        assertFailsWith<BookOneDayAheadException>("You need to book your car bay at lease one day in advance.") {
+            bookingManager.book(booking)
+        }
+    }
+
+    @Test
+    fun `can only book once every 24hrs`() {
+        mockBookingManagerClock(1)
+        val booking = Booking(getBookingDate(), customerAlice)
+        assertTrue { bookingManager.book(booking) }
+
+        val booking2 = Booking(getBookingDate(6), customerAlice)
+        assertFailsWith<BookingAgainWithin24hrs>("You can only book once every 24hrs.") {
+            bookingManager.book(booking2)
+        }
+    }
+
+    @Test
+    fun `can only book once every 24hrs but tries to book at the 23hr mark`() {
+        mockBookingManagerClock()
+        val booking = Booking(getBookingDate(1), customerAlice)
+        assertTrue { bookingManager.book(booking) }
+
+        mockBookingManagerClock(hoursOffset = 23, isInThePast = false)
+        val booking2 = Booking(getBookingDate(2), customerAlice)
+        assertFailsWith<BookingAgainWithin24hrs>("You can only book once every 24hrs.") {
+            bookingManager.book(booking2)
+        }
+    }
+
+    @Test
+    fun `can only book once every 24hrs but tries at the last second before being allowed to book again`() {
+        mockBookingManagerClock()
+        val booking = Booking(getBookingDate(1), customerAlice)
+        assertTrue { bookingManager.book(booking) }
+
+        mockBookingManagerClock(hoursOffset = 23, minutesOffset = 59, secondsOffset = 59, isInThePast = false)
+        val booking2 = Booking(getBookingDate(3), customerAlice)
+        assertFailsWith<BookingAgainWithin24hrs>("You can only book once every 24hrs.") {
+            bookingManager.book(booking2)
+        }
+    }
+
+    @Test
+    fun `can book once 24hrs has passed`() {
+        // Now is 19/04/2021 @ 12:49
+        mockBookingManagerClock()
+
+        // book for the 20th
+        val booking = Booking(getBookingDate(1), customerAlice)
+        assertTrue { bookingManager.book(booking) }
+
+        mockBookingManagerClock(hoursOffset = 24, isInThePast = false)
+        val booking2 = Booking(getBookingDate(3), customerAlice)
+        assertTrue { bookingManager.book(booking2) }
     }
 }

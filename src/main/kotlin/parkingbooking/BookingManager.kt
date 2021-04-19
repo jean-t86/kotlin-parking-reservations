@@ -82,7 +82,7 @@ class BookingManager(
 
         latestBookingTimestamp?.let {
             val latestBookingLocalDate = BookingManagerClock.toLocalDateTime(latestBookingTimestamp)
-            return ChronoUnit.HOURS.between(currentBookingLocalDate, latestBookingLocalDate) < 24
+            return ChronoUnit.HOURS.between(latestBookingLocalDate, currentBookingLocalDate) < 24
         }
 
         return false
