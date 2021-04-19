@@ -12,9 +12,7 @@ import parkingbooking.model.CarPark
 import parkingbooking.model.Customer
 import parkingbooking.util.BookingManagerClock
 import parkingbooking.util.UtcEpoch
-import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
@@ -44,12 +42,17 @@ class BookingManagerTest {
         val mockManagerClock = mockk<UtcEpoch>()
         if (isInThePast) {
             every { mockManagerClock.epochSecondNow() } returns
-                    LocalDateTime.now().minusDays(daysFromNow)
-                        .toEpochSecond(ZoneOffset.UTC)
+                    ZonedDateTime
+                        .now(ZoneId.of("UTC"))
+                        .minusDays(daysFromNow)
+                        .toEpochSecond()
         } else {
             every { mockManagerClock.epochSecondNow() } returns
-                    LocalDateTime.now().plusDays(daysFromNow)
-                        .toEpochSecond(ZoneOffset.UTC)
+                    ZonedDateTime
+                        .now(ZoneId.of("UTC"))
+                        .plusDays(daysFromNow)
+                        .toEpochSecond()
+
         }
 
         bookingManager = BookingManager(carPark, mockManagerClock)
@@ -58,11 +61,11 @@ class BookingManagerTest {
     private fun getBookingDate(daysFromNow: Long = 0, isInThePast: Boolean = false): ZonedDateTime {
         return if (isInThePast) {
             ZonedDateTime
-                .of(LocalDateTime.now(), ZoneId.of("UTC"))
+                .now(ZoneId.of("UTC"))
                 .minusDays(daysFromNow)
         } else {
             ZonedDateTime
-                .of(LocalDateTime.now(), ZoneId.of("UTC"))
+                .now(ZoneId.of("UTC"))
                 .plusDays(daysFromNow)
         }
     }
