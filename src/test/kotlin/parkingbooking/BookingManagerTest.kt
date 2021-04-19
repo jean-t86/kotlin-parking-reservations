@@ -38,19 +38,19 @@ class BookingManagerTest {
         )
     }
 
-    private fun mockBookingManagerClock(daysFromNow: Long = 0, isInThePast: Boolean = true) {
+    private fun mockBookingManagerClock(daysOffset: Long = 0, isInThePast: Boolean = true) {
         val mockManagerClock = mockk<UtcEpoch>()
         if (isInThePast) {
             every { mockManagerClock.epochSecondNow() } returns
                     ZonedDateTime
                         .now(ZoneId.of("UTC"))
-                        .minusDays(daysFromNow)
+                        .minusDays(daysOffset)
                         .toEpochSecond()
         } else {
             every { mockManagerClock.epochSecondNow() } returns
                     ZonedDateTime
                         .now(ZoneId.of("UTC"))
-                        .plusDays(daysFromNow)
+                        .plusDays(daysOffset)
                         .toEpochSecond()
 
         }
@@ -58,15 +58,15 @@ class BookingManagerTest {
         bookingManager = BookingManager(carPark, mockManagerClock)
     }
 
-    private fun getBookingDate(daysFromNow: Long = 0, isInThePast: Boolean = false): ZonedDateTime {
+    private fun getBookingDate(daysOffset: Long = 0, isInThePast: Boolean = false): ZonedDateTime {
         return if (isInThePast) {
             ZonedDateTime
                 .now(ZoneId.of("UTC"))
-                .minusDays(daysFromNow)
+                .minusDays(daysOffset)
         } else {
             ZonedDateTime
                 .now(ZoneId.of("UTC"))
-                .plusDays(daysFromNow)
+                .plusDays(daysOffset)
         }
     }
 
@@ -186,9 +186,29 @@ class BookingManagerTest {
     }
 
     @Test
-    fun `cannot make a booking in the past`() {
-        mockBookingManagerClock(1)
-        val booking = Booking(getBookingDate(4, true), customerEd)
+    fun `cannot make a booking 1 day in the past`() {
+        mockBookingManagerClock()
+        val booking = Booking(getBookingDate(1, true), customerEd)
+
+        assertFailsWith<BookingInThePastException>("You cannot make a booking in the past.") {
+            bookingManager.book(booking)
+        }
+    }
+
+    @Test
+    fun `cannot make a booking 2 days in the past`() {
+        mockBookingManagerClock()
+        val booking = Booking(getBookingDate(1, true), customerEd)
+
+        assertFailsWith<BookingInThePastException>("You cannot make a booking in the past.") {
+            bookingManager.book(booking)
+        }
+    }
+
+    @Test
+    fun `cannot make a booking 50 days in the past`() {
+        mockBookingManagerClock()
+        val booking = Booking(getBookingDate(50, true), customerEd)
 
         assertFailsWith<BookingInThePastException>("You cannot make a booking in the past.") {
             bookingManager.book(booking)

@@ -21,7 +21,7 @@ class AlreadyBookedForThatDateException : InvalidBookingException(
     """.trimIndent()
 )
 
-class NotBookedOneDayAheadException : InvalidBookingException(
+class BookOneDayAheadException : InvalidBookingException(
     """
         You need to book your car bay at lease one day in advance.
     """.trimIndent()

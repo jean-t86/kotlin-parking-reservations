@@ -32,7 +32,7 @@ class BookingManager(
                 throw AlreadyBookedForThatDateException()
 
             isCustomerNotMakingABookingAtLeastOneDayAhead(bookingDate.toLocalDate(), bookingCreationTimestamp) ->
-                throw NotBookedOneDayAheadException()
+                throw BookOneDayAheadException()
 
             isCustomerTryingToMakeMoreBookingsInLessThan24Hours(customer, bookingCreationTimestamp) ->
                 throw BookingAgainWithin24hrs()
