@@ -7,6 +7,7 @@ import parkingbooking.model.Customer
 import parkingbooking.util.BookingManagerClock
 import parkingbooking.util.UtcEpoch
 import java.time.LocalDate
+import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
 class BookingManager(
@@ -35,7 +36,7 @@ class BookingManager(
                 throw BookOneDayAheadException()
 
             isCustomerTryingToMakeMoreBookingsInLessThan24Hours(customer, bookingCreationTimestamp) ->
-                throw BookingAgainWithin24hrs()
+                throw BookingAgainWithin24hrsException()
 
             else -> {
                 if (bookingsDateToBooking[bookingDate.toLocalDate()] == null) {
@@ -91,5 +92,5 @@ class BookingManager(
         return false
     }
 
-    fun getBookings(date: LocalDate): List<Booking> = bookingsDateToBooking[date] ?: listOf()
+    fun getBookings(date: ZonedDateTime): List<Booking> = bookingsDateToBooking[date.toLocalDate()] ?: listOf()
 }

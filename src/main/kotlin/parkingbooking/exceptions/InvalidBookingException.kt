@@ -27,7 +27,7 @@ class BookOneDayAheadException : InvalidBookingException(
     """.trimIndent()
 )
 
-class BookingAgainWithin24hrs : InvalidBookingException(
+class BookingAgainWithin24hrsException : InvalidBookingException(
     """
         You can only book once every 24hrs.
     """.trimIndent()

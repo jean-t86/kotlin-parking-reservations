@@ -250,7 +250,7 @@ class BookingManagerTest {
         assertTrue { bookingManager.book(booking) }
 
         val booking2 = Booking(getBookingDate(6), customerAlice)
-        assertFailsWith<BookingAgainWithin24hrs>("You can only book once every 24hrs.") {
+        assertFailsWith<BookingAgainWithin24hrsException>("You can only book once every 24hrs.") {
             bookingManager.book(booking2)
         }
     }
@@ -263,7 +263,7 @@ class BookingManagerTest {
 
         mockBookingManagerClock(hoursOffset = 23, isInThePast = false)
         val booking2 = Booking(getBookingDate(2), customerAlice)
-        assertFailsWith<BookingAgainWithin24hrs>("You can only book once every 24hrs.") {
+        assertFailsWith<BookingAgainWithin24hrsException>("You can only book once every 24hrs.") {
             bookingManager.book(booking2)
         }
     }
@@ -276,22 +276,108 @@ class BookingManagerTest {
 
         mockBookingManagerClock(hoursOffset = 23, minutesOffset = 59, secondsOffset = 59, isInThePast = false)
         val booking2 = Booking(getBookingDate(3), customerAlice)
-        assertFailsWith<BookingAgainWithin24hrs>("You can only book once every 24hrs.") {
+        assertFailsWith<BookingAgainWithin24hrsException>("You can only book once every 24hrs.") {
             bookingManager.book(booking2)
         }
     }
 
     @Test
     fun `can book once 24hrs has passed`() {
-        // Now is 19/04/2021 @ 12:49
         mockBookingManagerClock()
 
-        // book for the 20th
         val booking = Booking(getBookingDate(1), customerAlice)
         assertTrue { bookingManager.book(booking) }
 
         mockBookingManagerClock(hoursOffset = 24, isInThePast = false)
         val booking2 = Booking(getBookingDate(3), customerAlice)
         assertTrue { bookingManager.book(booking2) }
+    }
+
+    @Test
+    fun `can query car park for all valid bookings by date when fully booked`() {
+        mockBookingManagerClock(1)
+        val bookingDate = getBookingDate()
+        val bookingAlice = Booking(bookingDate, customerAlice)
+        val bookingBob = Booking(bookingDate, customerBob)
+        val bookingCharlie = Booking(bookingDate, customerCharlie)
+        val bookingDave = Booking(bookingDate, customerDave)
+        bookingManager.book(bookingAlice)
+        bookingManager.book(bookingBob)
+        bookingManager.book(bookingCharlie)
+        bookingManager.book(bookingDave)
+
+        val actual = bookingManager.getBookings(bookingDate)
+        assertTrue { actual.size == 4 }
+        assertTrue { actual[0].customer == customerAlice }
+        assertTrue { actual[0].bookingDate == bookingDate }
+
+        assertTrue { actual[1].customer == customerBob }
+        assertTrue { actual[1].bookingDate == bookingDate }
+
+        assertTrue { actual[2].customer == customerCharlie }
+        assertTrue { actual[2].bookingDate == bookingDate }
+
+        assertTrue { actual[3].customer == customerDave }
+        assertTrue { actual[3].bookingDate == bookingDate }
+    }
+
+    @Test
+    fun `can query car park for all valid bookings by date when no bookings`() {
+        mockBookingManagerClock(1)
+        val bookingDate = getBookingDate()
+
+        assertTrue { bookingManager.getBookings(bookingDate).isEmpty() }
+    }
+
+    @Test
+    fun `can query car park for all valid bookings by date when 2 bookings`() {
+        mockBookingManagerClock(1)
+        val bookingDate = getBookingDate()
+        val bookingAlice = Booking(bookingDate, customerAlice)
+        val bookingBob = Booking(bookingDate, customerBob)
+        bookingManager.book(bookingAlice)
+        bookingManager.book(bookingBob)
+
+        val actual = bookingManager.getBookings(bookingDate)
+        assertTrue { actual.size == 2 }
+        assertTrue { actual[0].customer == customerAlice }
+        assertTrue { actual[0].bookingDate == bookingDate }
+
+        assertTrue { actual[1].customer == customerBob }
+        assertTrue { actual[1].bookingDate == bookingDate }
+    }
+
+    @Test
+    fun `can query car park for valid bookings on different dates`() {
+        mockBookingManagerClock(1)
+        val bookingDate1 = getBookingDate()
+        val bookingAlice = Booking(bookingDate1, customerAlice)
+        val bookingBob = Booking(bookingDate1, customerBob)
+
+        val bookingDate2 = getBookingDate(1)
+        val bookingCharlie = Booking(bookingDate2, customerCharlie)
+
+        val bookingDate3 = getBookingDate(3)
+        val bookingDave = Booking(bookingDate3, customerDave)
+        bookingManager.book(bookingAlice)
+        bookingManager.book(bookingBob)
+        bookingManager.book(bookingCharlie)
+        bookingManager.book(bookingDave)
+
+        var actual = bookingManager.getBookings(bookingDate1)
+        assertTrue { actual.size == 2 }
+        assertTrue { actual[0].customer == customerAlice }
+        assertTrue { actual[0].bookingDate == bookingDate1 }
+
+        assertTrue { actual[1].customer == customerBob }
+        assertTrue { actual[1].bookingDate == bookingDate1 }
+
+        actual = bookingManager.getBookings(bookingDate2)
+        assertTrue { actual[0].customer == customerCharlie }
+        assertTrue { actual[0].bookingDate == bookingDate2 }
+
+        actual = bookingManager.getBookings(bookingDate3)
+        assertTrue { actual[0].customer == customerDave }
+        assertTrue { actual[0].bookingDate == bookingDate3 }
     }
 }
