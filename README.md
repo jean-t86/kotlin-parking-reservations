@@ -5,10 +5,18 @@ a [coding exercise](https://docs.google.com/document/d/1GzN2bWTtpzNb6xgnidLlxYMs
 Adapptor as part of their recruitment process.
 
 ## Table of Contents
+
+- [Technologies](#technologies)
 - [Running the tests](#running-the-tests)
 - [Assumptions](#assumptions)
 - [Design decisions](#design-decisions)
 - [Trade-offs](#trade-offs)
+
+## Technologies
+
+- Kotlin
+- IntelliJ IDE
+- Gradle build
 
 ## Running the tests
 
@@ -21,6 +29,36 @@ $ ./gradlew test
 > Use `gradlew.bat` if you're on Windows
 
 A test report will be generated at `./build/reports/tests/test/index.html`
+
+## Design decisions
+
+I have approached the exercise from a client/server perspective, i.e. a customer uses a mobile application to book a car
+bay. All design decisions were made along the lines of this assumption.
+
+For example:
+
+The app displays a `DatePicker` for the user to choose their booking date.
+
+A network request is sent to the server to satisfy the booking request.
+
+On the server, all the business rules are checked against the booking date and the customer. If all checks pass, the
+booking is a success. If the booking fails to satisfy a rule, the server sends back an error response with the reason
+for the failure.
+
+It is assumed that, in such an architecture and as we scale, different servers and users could be located in different
+timezones. In such a scenario, there is always a question of which date and time to use as timestamp. I my case, after
+[reading up on the subject](https://kotlinfrompython.com/2020/07/14/dates-datetimes-timestamps/), I decided to use the
+UTC time zone everywhere.
+
+## Trade-offs
+
+The trade-off here is that a feature to show a customer all their previous bookings would show the date and time in UTC.
+Ideally, if this was an exercise in implementing both the front-end and the back-end, the mobile app would send through
+the timezone of the client to be stored by the server.
+
+Instead, querying all bookings for a specific user will show the date and time with respect to the UTC timezone.
+
+As the requirement is instead to query all bookings for any customer on a date, this is not much of a trade-off.
 
 ## Assumptions
 
@@ -41,30 +79,5 @@ A test report will be generated at `./build/reports/tests/test/index.html`
    server instances. In which case, the UTC time zone was used whenever a timestamp is required.
 
 
-6. Assumed that when a customer books a bay in the car park, it can be any available bay, i.e. bays do not have to
-   unique identifiers for customers to book a specific bay.
-
-## Design decisions
-
-I have approached the exercise from a client/server perspective, i.e. a customer uses a mobile application to book a car
-bay. All design decisions were made along the lines of this assumption.
-
-For example:
-
-The app displays a `DatePicker` for the user to choose their booking date.
-
-A network request is then be sent to the server to satisfy the booking request. On the server, all the business rules
-are checked against the booking date and the customer. If all checks pass, the booking is a success. If the booking
-fails to satisfy a rule, the server sends back an error response with the reason for the failure.
-
-It is assumed that, in such an architecture and as we scale, different servers and users could be located in different
-timezones. In such a scenario, there is always a question of which date and time to use as timestamp. I my case, after
-[reading up on the subject](https://kotlinfrompython.com/2020/07/14/dates-datetimes-timestamps/), I decided to go with
-the UTC time zone everywhere.
-
-## Trade-offs
-
-The trade-off here is that a feature to show a customer all their previous bookings would show the date and time in UTC.
-Ideally, if this was an exercise in implementing both the front-end and the back-end, the mobile app could send through
-the timezone to the client to be stored by the server. Instead, querying all bookings for a specific user will show the
-date and time with respect to the UTC timezone.
+6. Assumed that when a customer books a bay in the car park, it can be any available bay, i.e. bays do not have unique
+   identifiers for customers to book a specific bay.
