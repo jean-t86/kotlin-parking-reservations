@@ -93,40 +93,34 @@ class BookingManagerTest {
         mockBookingManagerClock(1)
         val booking = Booking(getBookingDate(), customerAlice)
 
-        val actual = bookingManager.book(booking)
-
-        assertTrue { actual }
+        assertTrue { bookingManager.book(booking) }
     }
 
     @Test
     fun `can book when three bays available`() {
-        mockBookingManagerClock(2)
+        mockBookingManagerClock(1)
         val booking = Booking(getBookingDate(), customerAlice)
         bookingManager.book(booking)
 
         val actualBooking = Booking(getBookingDate(), customerBob)
-        val actual = bookingManager.book(actualBooking)
-
-        assertTrue { actual }
+        assertTrue { bookingManager.book(actualBooking) }
     }
 
     @Test
     fun `can book when two bays available`() {
-        mockBookingManagerClock(2)
+        mockBookingManagerClock(1)
         val bookingAlice = Booking(getBookingDate(), customerAlice)
         val bookingBob = Booking(getBookingDate(), customerBob)
         bookingManager.book(bookingAlice)
         bookingManager.book(bookingBob)
 
         val actualBooking = Booking(getBookingDate(), customerCharlie)
-        val actual = bookingManager.book(actualBooking)
-
-        assertTrue { actual }
+        assertTrue { bookingManager.book(actualBooking) }
     }
 
     @Test
     fun `can book when one bay available`() {
-        mockBookingManagerClock(2)
+        mockBookingManagerClock(1)
         val bookingAlice = Booking(getBookingDate(), customerAlice)
         val bookingBob = Booking(getBookingDate(), customerBob)
         val bookingCharlie = Booking(getBookingDate(), customerCharlie)
@@ -135,14 +129,12 @@ class BookingManagerTest {
         bookingManager.book(bookingCharlie)
 
         val actualBooking = Booking(getBookingDate(), customerDave)
-        val actual = bookingManager.book(actualBooking)
-
-        assertTrue { actual }
+        assertTrue { bookingManager.book(actualBooking) }
     }
 
     @Test
     fun `cannot book when no bays available`() {
-        mockBookingManagerClock(2)
+        mockBookingManagerClock(1)
         val bookingAlice = Booking(getBookingDate(), customerAlice)
         val bookingBob = Booking(getBookingDate(), customerBob)
         val bookingCharlie = Booking(getBookingDate(), customerCharlie)
